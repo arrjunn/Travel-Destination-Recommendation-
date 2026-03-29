@@ -1,0 +1,278 @@
+=================================================================
+ BDA Lab 6: Travel Destination Recommendation System
+ Using Apache Spark MLlib (ALS Algorithm)
+=================================================================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/03/10 10:14:49 WARN Utils: Your hostname, runsc, resolves to a loopback address: 127.0.0.1; using 21.0.0.178 instead (on interface 020c3e9f3c-v)
+26/03/10 10:14:49 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/03/10 10:14:51 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[+] Spark Session initialized (version: 4.1.1)
+=================================================================
+ STEP 2: Loading and Exploring Data
+=================================================================
+[Stage 0:>                                                          (0 + 1) / 1]                                                                                
+--- Dataset Overview ---
+  Total ratings       : 1001
+  Unique travelers    : 60
+  Unique destinations : 35
+  Matrix sparsity     : 52.3%
+--- Schema ---
+root
+ |-- userId: integer (nullable = true)
+ |-- destId: integer (nullable = true)
+ |-- rating: double (nullable = true)
+--- Sample Ratings ---
++------+------+------+
+|userId|destId|rating|
++------+------+------+
+|1     |18    |4.5   |
+|1     |16    |2.6   |
+|1     |15    |1.7   |
+|1     |9     |2.8   |
+|1     |24    |3.4   |
+|1     |4     |2.5   |
+|1     |22    |3.4   |
+|1     |31    |3.9   |
+|1     |35    |2.0   |
+|1     |3     |1.5   |
++------+------+------+
+only showing top 10 rows
+--- Rating Distribution (top 10 values) ---
++------+-----+
+|rating|count|
++------+-----+
+|   1.0|    8|
+|   1.1|   11|
+|   1.2|   22|
+|   1.3|   27|
+|   1.4|   14|
+|   1.5|   26|
+|   1.6|   13|
+|   1.7|   31|
+|   1.8|   21|
+|   1.9|   23|
++------+-----+
+only showing top 10 rows
+--- Top 10 Most-Rated Destinations ---
++------+---------------------------+-----------+
+|destId|name                       |num_ratings|
++------+---------------------------+-----------+
+|20    |Cape Town, South Africa    |34         |
+|15    |Dubrovnik, Croatia         |34         |
+|10    |Banff, Canada              |34         |
+|35    |Ha Long Bay, Vietnam       |34         |
+|3     |Kyoto, Japan               |34         |
+|5     |Reykjavik, Iceland         |33         |
+|12    |Swiss Alps, Switzerland    |32         |
+|18    |Bora Bora, French Polynesia|32         |
+|11    |Maldives                   |32         |
+|9     |Cappadocia, Turkey         |31         |
++------+---------------------------+-----------+
+only showing top 10 rows
+--- Top 10 Highest-Rated Destinations (min 5 ratings) ---
++------+--------------------------+----------+-----------+
+|destId|name                      |avg_rating|num_ratings|
++------+--------------------------+----------+-----------+
+|26    |Zanzibar, Tanzania        |3.75      |29         |
+|5     |Reykjavik, Iceland        |3.71      |33         |
+|22    |Lofoten Islands, Norway   |3.63      |26         |
+|31    |Galápagos Islands, Ecuador|3.45      |27         |
+|34    |Oia, Greece               |3.29      |26         |
+|8     |Amalfi Coast, Italy       |3.27      |28         |
+|27    |Cinque Terre, Italy       |3.25      |25         |
+|24    |Cusco, Peru               |3.24      |28         |
+|25    |Phuket, Thailand          |3.23      |30         |
+|28    |Fiji Islands              |3.15      |27         |
++------+--------------------------+----------+-----------+
+only showing top 10 rows
+=================================================================
+ STEP 3: Splitting Data into Train and Test Sets
+=================================================================
+  Training set : 838 ratings (80%)
+  Test set     : 163 ratings (20%)
+  Total        : 1001
+=================================================================
+ STEP 4: Training ALS Model
+=================================================================
+  ALS Configuration:
+    rank (latent factors) = 10
+    maxIter               = 10
+    regParam (lambda)     = 0.1
+    coldStartStrategy     = drop
+  [..] Training ALS model...
+[Stage 39:>                                                         (0 + 1) / 1]                                                                                [Stage 48:======================>                                  (4 + 2) / 10][Stage 48:======================>                                  (4 + 3) / 10][Stage 48:=============================================>           (8 + 2) / 10][Stage 49:=============================================>           (8 + 2) / 10][Stage 50:=======================================>                 (7 + 2) / 10][Stage 52:=============================================>           (8 + 2) / 10]                                                                                  [+] Model trained successfully!
+=================================================================
+ STEP 5: Model Evaluation (RMSE)
+=================================================================
+--- Predicted vs Actual Ratings (sample) ---
+[Stage 116:=====>                                                  (1 + 2) / 10][Stage 116:============================================>           (8 + 2) / 10]                                                                                +------+------+------+----------+
+|userId|destId|rating|prediction|
++------+------+------+----------+
+|1     |3     |1.5   |3.4862587 |
+|1     |9     |2.8   |2.1777034 |
+|1     |14    |2.0   |2.2361221 |
+|1     |19    |3.9   |2.7864242 |
+|1     |31    |3.9   |3.1887612 |
+|2     |5     |4.5   |3.5820532 |
+|2     |12    |3.5   |1.8888347 |
+|2     |22    |4.5   |3.074724  |
+|3     |18    |1.5   |3.2198682 |
+|3     |19    |3.3   |3.9038498 |
+|3     |24    |4.2   |3.5420797 |
+|3     |27    |1.5   |2.9325156 |
+|3     |30    |4.0   |3.5856278 |
+|4     |4     |3.3   |2.5452685 |
+|4     |15    |2.5   |2.9410594 |
++------+------+------+----------+
+only showing top 15 rows
+[Stage 171:=====>                                                  (1 + 2) / 10][Stage 171:==================================================>     (9 + 1) / 10]                                                                                  +-----------------------------------------+
+  |  RMSE = 1.1648                          |
+  +-----------------------------------------+
+    -> Acceptable (RMSE < 1.3)
+=================================================================
+ STEP 6: Hyperparameter Tuning (Grid Search)
+=================================================================
+  Testing 6 configurations...
+  Rank    RegParam    MaxIter   RMSE        Status
+  ----------------------------------------------------
+  5       0.01        10        1.4605      <-- BEST
+  5       0.1         10        1.1047      <-- BEST
+  10      0.01        10        1.9169      
+  10      0.1         10        1.1648      
+  15      0.05        10        1.1637      
+  15      0.1         10        1.1179      
+  [+] Best Configuration:
+      rank=5, regParam=0.1, maxIter=10
+      RMSE = 1.1047
+  [+] Tuned model selected (RMSE: 1.1047)
+=================================================================
+ STEP 7: Top-5 Recommendations for All Travelers
+=================================================================
+--- Raw Recommendation Structure ---
+[Stage 812:===>                                                   (7 + 3) / 100][Stage 812:=======>                                              (13 + 2) / 100][Stage 812:========>                                             (15 + 2) / 100][Stage 812:==========>                                           (19 + 2) / 100][Stage 812:=============>                                        (25 + 2) / 100][Stage 812:================>                                     (30 + 2) / 100][Stage 812:====================>                                 (38 + 2) / 100][Stage 812:========================>                             (46 + 2) / 100][Stage 812:============================>                         (53 + 2) / 100][Stage 812:================================>                     (60 + 2) / 100][Stage 812:====================================>                 (68 + 2) / 100][Stage 812:=======================================>              (74 + 2) / 100][Stage 812:===========================================>          (80 + 2) / 100][Stage 812:===============================================>      (88 + 2) / 100][Stage 812:====================================================> (97 + 2) / 100]                                                                                +------+------------------------------------------------------------------------------------+
+|userId|recommendations                                                                     |
++------+------------------------------------------------------------------------------------+
+|50    |[{22, 4.30326}, {9, 4.249794}, {34, 4.0779996}, {21, 4.06694}, {8, 3.9385216}]      |
+|20    |[{9, 4.5891023}, {21, 4.426656}, {22, 4.119109}, {27, 4.028523}, {23, 4.0209837}]   |
+|30    |[{24, 4.2952895}, {19, 4.1452436}, {32, 4.1075697}, {33, 3.9613628}, {6, 3.8665364}]|
++------+------------------------------------------------------------------------------------+
+only showing top 3 rows
+--- Recommendations with Destination Names ---
+[Stage 861:===>          (25 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:====>         (32 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:=====>        (41 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:======>       (49 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:=======>      (57 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:========>     (61 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:=========>    (67 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:==========>   (73 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:===========>  (80 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:===========>  (85 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:============> (92 + 2) / 100][Stage 862:>                (0 + 0) / 1][Stage 861:=============>(95 + 3) / 100][Stage 862:>                (0 + 0) / 1]                                                                                +------+------+---------------------------+----------------+
+|userId|destId|name                       |predicted_rating|
++------+------+---------------------------+----------------+
+|1     |25    |Phuket, Thailand           |4.42            |
+|1     |18    |Bora Bora, French Polynesia|4.36            |
+|1     |26    |Zanzibar, Tanzania         |4.34            |
+|1     |28    |Fiji Islands               |4.18            |
+|1     |5     |Reykjavik, Iceland         |4.11            |
+|2     |3     |Kyoto, Japan               |3.77            |
+|2     |30    |Tromsø, Norway             |3.75            |
+|2     |19    |Siem Reap, Cambodia        |3.66            |
+|2     |13    |Petra, Jordan              |3.66            |
+|2     |6     |Marrakech, Morocco         |3.66            |
+|3     |7     |Queenstown, New Zealand    |4.75            |
+|3     |26    |Zanzibar, Tanzania         |4.36            |
+|3     |5     |Reykjavik, Iceland         |4.31            |
+|3     |4     |Machu Picchu, Peru         |4.17            |
+|3     |3     |Kyoto, Japan               |4.16            |
+|4     |22    |Lofoten Islands, Norway    |4.26            |
+|4     |9     |Cappadocia, Turkey         |4.09            |
+|4     |34    |Oia, Greece                |4.08            |
+|4     |21    |Hallstatt, Austria         |3.97            |
+|4     |5     |Reykjavik, Iceland         |3.91            |
+|5     |30    |Tromsø, Norway             |3.65            |
+|5     |25    |Phuket, Thailand           |3.61            |
+|5     |18    |Bora Bora, French Polynesia|3.57            |
+|5     |26    |Zanzibar, Tanzania         |3.53            |
+|5     |13    |Petra, Jordan              |3.2             |
+|6     |26    |Zanzibar, Tanzania         |3.83            |
+|6     |5     |Reykjavik, Iceland         |3.78            |
+|6     |25    |Phuket, Thailand           |3.6             |
+|6     |18    |Bora Bora, French Polynesia|3.59            |
+|6     |28    |Fiji Islands               |3.57            |
++------+------+---------------------------+----------------+
+only showing top 30 rows
+=================================================================
+ STEP 8: Personalized Plan for Traveler #1
+=================================================================
+  --- Places Already Rated by Traveler #1 ---
++------+---------------------------+------+
+|destId|name                       |rating|
++------+---------------------------+------+
+|26    |Zanzibar, Tanzania         |4.8   |
+|18    |Bora Bora, French Polynesia|4.5   |
+|17    |Patagonia, Argentina       |4.0   |
+|31    |Galápagos Islands, Ecuador |3.9   |
+|19    |Siem Reap, Cambodia        |3.9   |
+|20    |Cape Town, South Africa    |3.9   |
+|7     |Queenstown, New Zealand    |3.7   |
+|1     |Bali, Indonesia            |3.6   |
+|24    |Cusco, Peru                |3.4   |
+|22    |Lofoten Islands, Norway    |3.4   |
+|8     |Amalfi Coast, Italy        |3.4   |
+|9     |Cappadocia, Turkey         |2.8   |
+|16    |Jaipur, India              |2.6   |
+|29    |Chefchaouen, Morocco       |2.6   |
+|4     |Machu Picchu, Peru         |2.5   |
+|12    |Swiss Alps, Switzerland    |2.1   |
+|35    |Ha Long Bay, Vietnam       |2.0   |
+|14    |Havana, Cuba               |2.0   |
+|15    |Dubrovnik, Croatia         |1.7   |
+|3     |Kyoto, Japan               |1.5   |
++------+---------------------------+------+
+only showing top 20 rows
+  --- Top-5 NEW Destinations for Traveler #1 ---
+[Stage 917:========>                                             (15 + 2) / 100][Stage 917:==========>                                           (19 + 2) / 100][Stage 917:================>                                     (30 + 2) / 100][Stage 917:=======================>                              (43 + 2) / 100][Stage 917:=============================>                        (54 + 2) / 100][Stage 917:==================================>                   (63 + 2) / 100][Stage 917:==========================================>           (79 + 3) / 100][Stage 917:===================================================>  (96 + 2) / 100]                                                                                +---------------------------+----------------+
+|name                       |predicted_rating|
++---------------------------+----------------+
+|Phuket, Thailand           |4.42            |
+|Bora Bora, French Polynesia|4.36            |
+|Zanzibar, Tanzania         |4.34            |
+|Fiji Islands               |4.18            |
+|Reykjavik, Iceland         |4.11            |
++---------------------------+----------------+
+=================================================================
+ STEP 8: Personalized Plan for Traveler #10
+=================================================================
+  --- Places Already Rated by Traveler #10 ---
++------+-----------------------+------+
+|destId|name                   |rating|
++------+-----------------------+------+
+|22    |Lofoten Islands, Norway|4.2   |
+|26    |Zanzibar, Tanzania     |4.1   |
+|12    |Swiss Alps, Switzerland|3.6   |
+|4     |Machu Picchu, Peru     |3.5   |
+|16    |Jaipur, India          |3.4   |
+|9     |Cappadocia, Turkey     |2.4   |
+|6     |Marrakech, Morocco     |1.9   |
+|27    |Cinque Terre, Italy    |1.7   |
+|23    |Zhangjiajie, China     |1.7   |
+|13    |Petra, Jordan          |1.6   |
++------+-----------------------+------+
+  --- Top-5 NEW Destinations for Traveler #10 ---
+[Stage 972:============>                                         (24 + 2) / 100][Stage 972:===================>                                  (36 + 2) / 100][Stage 972:=========================>                            (47 + 3) / 100][Stage 972:=================================>                    (62 + 2) / 100][Stage 972:===================================>                  (66 + 2) / 100][Stage 972:=============================================>        (84 + 2) / 100][Stage 972:===================================================>  (96 + 2) / 100]                                                                                +-----------------------+----------------+
+|name                   |predicted_rating|
++-----------------------+----------------+
+|Reykjavik, Iceland     |4.24            |
+|Zanzibar, Tanzania     |3.66            |
+|Patagonia, Argentina   |3.55            |
+|Queenstown, New Zealand|3.54            |
+|Lofoten Islands, Norway|3.53            |
++-----------------------+----------------+
+=================================================================
+ FINAL SUMMARY
+=================================================================
+  Domain          : Travel Destination Recommendations
+  Dataset         : 1001 ratings | 60 travelers | 35 destinations
+  Algorithm       : ALS (Alternating Least Squares)
+  Best Parameters : rank=5, regParam=0.1
+  Best RMSE       : 1.1047
+  Output          : Top-5 destinations per traveler
+=================================================================
+ Lab Activity 6 - COMPLETE
+=================================================================
+[+] Spark session stopped.
